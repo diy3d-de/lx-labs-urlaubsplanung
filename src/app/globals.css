@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0b0e14;
+  --bg-elevated: #0f131b;
+  --surface: #141922;
+  --surface-2: #1b212c;
+  --surface-hover: #212836;
+  --border: #262d3a;
+  --border-soft: #1d232e;
+  --text: #e8ebf1;
+  --text-muted: #929cae;
+  --text-faint: #5c6577;
+  --accent: #38bdf8;
+  --accent-soft: rgba(56, 189, 248, 0.14);
+  --accent-strong: #0ea5e9;
+  --danger: #fb7185;
+  --weekend-bg: rgba(100, 130, 170, 0.16);
+  --weekend-text: #93a5c4;
+  --holiday-bg: rgba(244, 63, 94, 0.24);
+  --holiday-text: #fda4af;
+  --ferien-bg: rgba(217, 155, 15, 0.28);
+  --ferien-text: #fcd34d;
+  --ferien-weekend-bg: rgba(191, 140, 20, 0.48);
+  --today-ring: #38bdf8;
+
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-2);
+  border-radius: 8px;
+  border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--surface-hover);
+}
+
+.font-plex {
+  font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
+}
+
+.person-colors {
+  --p0: #38bdf8;
+  --p1: #34d399;
+  --p2: #fbbf24;
+  --p3: #fb7185;
+  --p4: #a78bfa;
+  --p5: #f472b6;
+  --p6: #a3e635;
+  --p7: #fb923c;
+  --p8: #2dd4bf;
+  --p9: #818cf8;
+}
+
+@media print {
+  /*
+   * Eigene Helligkeitsstufen pro Kategorie (Wochenende am hellsten, Feiertag am
+   * dunkelsten) statt reiner Ton-Unterschiede – so bleiben die Flächen auch bei
+   * Schwarz-Weiß-Druck (Graustufen) klar voneinander unterscheidbar.
+   */
+  :root {
+    --bg: #ffffff;
+    --bg-elevated: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f1f5f9;
+    --surface-hover: #f1f5f9;
+    --border: #cbd5e1;
+    --border-soft: #e2e8f0;
+    --text: #0f172a;
+    --text-muted: #334155;
+    --text-faint: #64748b;
+    --accent: #0369a1;
+    --accent-soft: #e0f2fe;
+    --accent-strong: #0369a1;
+    --danger: #b91c1c;
+    --weekend-bg: #eef2f6;
+    --weekend-text: #334155;
+    --ferien-bg: #fde68a;
+    --ferien-text: #78350f;
+    --ferien-weekend-bg: #f5b93f;
+    --holiday-bg: #fb7185;
+    --holiday-text: #7f1d1d;
+    --today-ring: #0369a1;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: var(--text) !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+}
+
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}

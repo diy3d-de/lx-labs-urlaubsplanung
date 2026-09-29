@@ -1,0 +1,46 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+  engineType      = "client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Person {
+  id              String     @id @default(cuid())
+  name            String
+  isStudent       Boolean    @default(false)
+  color           String     @default("#6366f1")
+  order           Int        @default(0)
+  /// Jährlicher Urlaubsanspruch in Tagen (nur relevant für Nicht-Schüler)
+  vacationDays    Float      @default(30)
+  /// true = 24.12. zählt als halber Urlaubstag, false = ganzer Tag
+  heiligabendHalf Boolean    @default(true)
+  /// true = 31.12. zählt als halber Urlaubstag, false = ganzer Tag
+  silvesterHalf   Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  vacations       Vacation[]
+}
+
+model Vacation {
+  id        String   @id @default(cuid())
+  personId  String
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  /// Kalendertag im Format YYYY-MM-DD (zeitzonenunabhängig)
+  startDate String
+  endDate   String
+  /// Nur relevant bei Einzeltag (startDate == endDate): true = halber Urlaubstag
+  halfDay   Boolean  @default(false)
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([personId])
+}
+
+model Settings {
+  id         Int    @id @default(1)
+  bundesland String @default("BW")
+}

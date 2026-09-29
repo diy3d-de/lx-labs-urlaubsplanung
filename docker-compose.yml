@@ -1,0 +1,12 @@
+services:
+  urlaubsplanung:
+    build: .
+    container_name: lx-urlaubsplanung
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - urlaubsplanung-data:/app/data
+
+volumes:
+  urlaubsplanung-data:
