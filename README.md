@@ -71,6 +71,11 @@ Ergebnis: `dist/lx-urlaubsplanung Setup <version>.exe` (Installer) und `dist/lx-
 Die Datenbank liegt unter `%APPDATA%\lx-urlaubsplanung\urlaubsplanung.db`. Zum Testen ohne Installer:
 `npm run desktop:prepare && npm run desktop:start`.
 
+**Release über GitHub Actions:** Version in `package.json` erhöhen, committen und ein passendes Tag pushen
+(`git tag v0.2.0 && git push origin v0.2.0`). Der Workflow `Desktop-Release` baut beide EXE-Dateien unter Windows
+und hängt sie an ein neues GitHub-Release. Manuell gestartet (Actions → Desktop-Release → Run workflow) baut er nur
+und legt die EXE-Dateien als Artefakt ab.
+
 ## Konfiguration
 
 | Variable | Zweck | Standard |

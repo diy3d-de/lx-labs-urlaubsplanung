@@ -71,6 +71,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
+      "artifactName": "${productName}-${version}-setup.${ext}",
       "shortcutName": "lx-urlaubsplanung"
     },
     "portable": { "artifactName": "${productName}-${version}-portable.exe" }

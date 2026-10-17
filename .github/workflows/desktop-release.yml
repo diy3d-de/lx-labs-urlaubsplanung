@@ -1,0 +1,63 @@
+# Baut die Windows-Desktop-App (Installer + Portable-EXE).
+# - Tag v* (z. B. v0.2.0): Build und GitHub-Release mit beiden EXE-Dateien
+# - manuell (workflow_dispatch): nur Build, EXE-Dateien als Workflow-Artefakt
+name: Desktop-Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      # Ohne Zertifikat keine Signatur versuchen (SignPath folgt als eigener Schritt)
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Tag passt zur Version in package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ("v$version" -ne "${{ github.ref_name }}") {
+            Write-Error "Tag ${{ github.ref_name }} passt nicht zu package.json-Version $version"
+            exit 1
+          }
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Prisma-Client erzeugen
+        run: npx prisma generate
+
+      - name: Desktop-App bauen
+        run: npm run desktop:prepare && npx electron-builder --win --publish never
+
+      - name: EXE-Dateien als Artefakt hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: lx-urlaubsplanung-windows
+          path: dist/*.exe
+          if-no-files-found: error
+
+      - name: GitHub-Release anlegen
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $files = Get-ChildItem dist -Filter *.exe | ForEach-Object { $_.FullName }
+          gh release create "${{ github.ref_name }}" @files `
+            --title "lx-urlaubsplanung ${{ github.ref_name }}" `
+            --notes "Windows-Installer (*-setup.exe) und Portable-Version (*-portable.exe). Daten unter %APPDATA%\lx-urlaubsplanung."
