@@ -1,4 +1,4 @@
-﻿# Baut die Windows-Desktop-App (Installer + Portable-EXE).
+# Baut die Windows-Desktop-App (Installer + Portable-EXE).
 # - Tag v* (z. B. v0.2.0): Build und GitHub-Release mit beiden EXE-Dateien
 # - manuell (workflow_dispatch): nur Build, EXE-Dateien als Workflow-Artefakt
 name: Desktop-Release
@@ -35,7 +35,7 @@ jobs:
             exit 1
           }
 
-      - name: AbhÃ¤ngigkeiten installieren
+      - name: Abhängigkeiten installieren
         run: npm ci
 
       - name: Prisma-Client erzeugen
