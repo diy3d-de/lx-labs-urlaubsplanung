@@ -57,6 +57,20 @@ Für die Entwicklung reicht nach `npx prisma migrate deploy` ein `npm run dev`.
 **Zum Ausprobieren:** Die Datei [`docs/beispieldaten.json`](docs/beispieldaten.json) enthält erfundene Personen und
 Urlaube. Sie lässt sich über **Daten → Backup importieren** einspielen.
 
+## Desktop-App (Windows)
+
+Die App lässt sich als eigenständige Windows-Anwendung mit Electron bauen. Sie startet den Server lokal auf
+`127.0.0.1` mit einem zufälligen freien Port und ist damit von außen nicht erreichbar.
+
+```bash
+npm run icons          # nur nach Änderungen an electron/icon.svg
+npm run desktop:dist   # Next-Build + Installer und Portable-EXE in dist/
+```
+
+Ergebnis: `dist/lx-urlaubsplanung Setup <version>.exe` (Installer) und `dist/lx-urlaubsplanung-<version>-portable.exe`.
+Die Datenbank liegt unter `%APPDATA%\lx-urlaubsplanung\urlaubsplanung.db`. Zum Testen ohne Installer:
+`npm run desktop:prepare && npm run desktop:start`.
+
 ## Konfiguration
 
 | Variable | Zweck | Standard |

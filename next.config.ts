@@ -25,6 +25,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  output: "standalone", // für die Desktop-App (Electron) und schlankere Docker-Images
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
