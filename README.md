@@ -73,26 +73,50 @@ Ergebnis: `dist/lx-urlaubsplanung-Setup-<version>.exe`. Die Datenbank liegt unte
 `%APPDATA%\lx-urlaubsplanung\urlaubsplanung.db`. Zum Testen ohne Installer:
 `npm run desktop:prepare && npm run desktop:start`.
 
+## Mobile-App (Android)
+
+Die Flutter-App in [`mobile/`](mobile/) funktioniert eigenständig offline (eigene Datenbank auf dem Handy) und gleicht
+sich optional mit einer Server-Installation im Heimnetz ab (Einstellungen → Server-Adresse, z. B.
+`192.168.178.20:3000`). Kalender mit Feiertagen und Schulferien, Urlaubskonto und Personen wie in der Web-App.
+Details zum Entwickeln und Bauen: [`mobile/README.md`](mobile/README.md).
+
 ## Release & OTA-Updates
 
-Die installierte Desktop-App prüft 15 Sekunden nach dem Start und danach alle 6 Stunden, ob es auf GitHub eine neuere
-Version gibt (öffentliche Releases dieses Repos, kein Token nötig). Ein Update lädt sie im Hintergrund; installiert
-wird nur per Klick auf **„Update v… bereit“ → „Jetzt neu starten und installieren“**. Solange ein Dialog offen ist oder
-ein Import läuft, ist die Installation gesperrt. Protokoll: `%APPDATA%\lx-urlaubsplanung\update.log`.
+Beide Apps aktualisieren sich aus den öffentlichen Releases dieses Repos (kein Token nötig):
+
+- **Desktop:** prüft 15 Sekunden nach dem Start und danach alle 6 Stunden, lädt ein Update im Hintergrund und
+  installiert nur per Klick auf **„Update v… bereit“ → „Jetzt neu starten und installieren“**. Solange ein Dialog offen
+  ist oder ein Import läuft, ist die Installation gesperrt. Protokoll: `%APPDATA%\lx-urlaubsplanung\update.log`.
+- **Android:** prüft kurz nach dem Start und beim Zurückkehren in die App (höchstens alle 6 Stunden). Unter
+  **Einstellungen → App-Version** erscheinen Version und Release-Notes; herunterladen, Prüfsumme prüfen und
+  installieren passiert auf Tippen. Android verlangt einmalig die Erlaubnis „Apps aus dieser Quelle zulassen“ und
+  installiert ein Update nur, wenn es mit demselben Schlüssel signiert ist.
 
 **Neue Version veröffentlichen:**
 
 1. Version in `package.json` erhöhen (`npm version 0.3.0 --no-git-tag-version` passt auch `package-lock.json` an),
-   committen.
+   committen. Die Android-Version wird daraus abgeleitet (versionCode = Major·10000 + Minor·100 + Patch).
 2. `git tag v0.3.0 && git push origin main v0.3.0`
-3. Der Workflow `Desktop-Release` baut, testet, prüft das Paket und legt **einen Release-Entwurf** mit Installer,
-   `.blockmap` und `latest.yml` an. Entwurf prüfen.
+3. Der Workflow `Release` baut und testet beide Apps, prüft das Desktop-Paket und legt **einen Release-Entwurf** mit
+   Installer, `.blockmap`, `latest.yml`, APK und `.apk.sha256` an. Entwurf prüfen.
 4. Release-Notes im Format von [`docs/release-notes-vorlage.md`](docs/release-notes-vorlage.md) schreiben und
    veröffentlichen: `gh release edit v0.3.0 --draft=false --latest --notes-file notes.md`. Erst jetzt sehen
    installierte Apps das Update.
 
-Manuell gestartet (Actions → Desktop-Release → Run workflow) baut der Workflow nur und legt den Installer als
-Artefakt ab.
+Manuell gestartet (Actions → Release → Run workflow) baut der Workflow nur und legt Installer und (debug-signierte)
+APK als Artefakte ab.
+
+**Android-Signaturschlüssel (einmalig):** Der Workflow braucht vier Repository-Secrets: `ANDROID_KEYSTORE_BASE64`,
+`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Den Schlüssel erzeugen und sicher aufbewahren
+– **geht er verloren, lassen sich installierte Apps nicht mehr aktualisieren**:
+
+```powershell
+keytool -genkeypair -v -keystore lx-urlaubsplanung-upload.jks -keyalg RSA -keysize 4096 -validity 10000 -alias upload
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("lx-urlaubsplanung-upload.jks")) | gh secret set ANDROID_KEYSTORE_BASE64
+gh secret set ANDROID_KEYSTORE_PASSWORD   # fragt den Wert ab
+gh secret set ANDROID_KEY_PASSWORD
+gh secret set ANDROID_KEY_ALIAS --body upload
+```
 
 **Stolpersteine:**
 
@@ -105,8 +129,12 @@ Artefakt ab.
 - `scripts/pruefe-paket.cjs` vor jeder Veröffentlichung laufen lassen und immer das gepackte `dist/win-unpacked`
   testen, nie nur den Entwicklungsstart.
 
-**Datenschutz:** Für die Update-Prüfung ruft die Desktop-App Server von GitHub ab (IP-Adresse und Programmversion
-gehen dabei an GitHub). Abschalten mit der Umgebungsvariablen `LX_URLAUBSPLANUNG_KEINE_UPDATES=1`.
+- Android: Den Signaturschlüssel nie verlieren oder wechseln; die `applicationId` (`dev.lx_labs.urlaubsplanung`)
+  nie ändern.
+
+**Datenschutz:** Für die Update-Prüfung rufen die Apps Server von GitHub ab (IP-Adresse und Programmversion gehen
+dabei an GitHub); die Mobile-App holt außerdem Feiertage und Schulferien direkt bei Nager.Date und der OpenHolidays
+API. Desktop: Update-Prüfung abschalten mit der Umgebungsvariablen `LX_URLAUBSPLANUNG_KEINE_UPDATES=1`.
 
 ## Abgleich mit Mobilgeräten
 
