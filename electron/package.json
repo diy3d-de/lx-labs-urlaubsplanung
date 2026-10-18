@@ -1,0 +1,12 @@
+{
+  "name": "lx-urlaubsplanung",
+  "version": "0.1.0",
+  "description": "Urlaubs- und Ferienplaner für Familien und kleine Teams",
+  "author": "lx-labs.dev",
+  "license": "MIT",
+  "private": true,
+  "main": "main.cjs",
+  "dependencies": {
+    "electron-updater": "6.8.10"
+  }
+}

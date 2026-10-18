@@ -22,6 +22,8 @@ model Person {
   /// true = 31.12. zählt als halber Urlaubstag, false = ganzer Tag
   silvesterHalf   Boolean    @default(true)
   createdAt       DateTime   @default(now())
+  /// Änderungszähler für den Abgleich mit der Mobile-App (setzt ein SQLite-Trigger, siehe Migration sync)
+  rev             Int        @default(0)
   vacations       Vacation[]
 }
 
@@ -36,6 +38,7 @@ model Vacation {
   halfDay   Boolean  @default(false)
   note      String?
   createdAt DateTime @default(now())
+  rev       Int      @default(0)
 
   @@index([personId])
 }
@@ -43,4 +46,26 @@ model Vacation {
 model Settings {
   id         Int    @id @default(1)
   bundesland String @default("BW")
+  rev        Int    @default(0)
+}
+
+/// Gelöschte Personen/Urlaube, damit die Mobile-App Löschungen übernimmt (befüllt per Trigger)
+model Tombstone {
+  entity String
+  id     String
+  rev    Int
+
+  @@id([entity, id])
+  @@index([rev])
+}
+
+/// Globaler, monoton steigender Änderungszähler (eine Zeile mit id = 1) und zufällige Kennung der Datenbank.
+///
+/// ACHTUNG: rev und Tombstones pflegen SQLite-Trigger (Migration 20261018120000_sync), die Prisma nicht kennt.
+/// Baut eine künftige Migration die Tabelle Person, Vacation oder Settings neu auf (CREATE new_… / DROP TABLE),
+/// verschwinden die Trigger - dann in derselben Migration neu anlegen. /api/sync prüft das und bricht sonst ab.
+model SyncCounter {
+  id    Int    @id @default(1)
+  value Int    @default(0)
+  dbId  String @default("")
 }

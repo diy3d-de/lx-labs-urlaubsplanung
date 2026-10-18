@@ -11,6 +11,7 @@ import ImportDialog from "./ImportDialog";
 import PersonDialog, { type PersonFormData } from "./PersonDialog";
 import VacationBalance from "./VacationBalance";
 import VacationDialog from "./VacationDialog";
+import UpdateAnzeige from "./UpdateAnzeige";
 import { formatLocalDate, getRange, rangeLabel, shiftAnchor } from "@/lib/dateRange";
 import { bundeslandName } from "@/lib/bundeslaender";
 import { PERSON_COLOR_VARS, personInitials, type Person, type Vacation, type ViewMode } from "@/lib/types";
@@ -234,7 +235,16 @@ export default function CalendarApp() {
               <h1 className="text-lg font-semibold tracking-tight">Urlaubsplanung</h1>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <UpdateAnzeige
+              sperrGrund={
+                importOpen
+                  ? "Während eines Imports kann kein Update installiert werden."
+                  : personDialog || vacationDialog
+                    ? "Bitte zuerst den offenen Dialog speichern oder schließen."
+                    : null
+              }
+            />
             <BundeslandSelect value={bundesland ?? "BW"} onChange={updateBundesland} />
             <DataMenu onImport={() => setImportOpen(true)} onError={setError} />
             <PrintButton />

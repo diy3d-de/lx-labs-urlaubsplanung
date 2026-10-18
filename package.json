@@ -7,10 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --test tests/",
     "icons": "node scripts/make-icons.mjs",
+    "desktop:deps": "npm ci --prefix electron --ignore-scripts",
     "desktop:prepare": "next build && node scripts/prepare-desktop.mjs",
-    "desktop:start": "electron .",
-    "desktop:dist": "npm run desktop:prepare && electron-builder --win"
+    "desktop:start": "electron electron",
+    "desktop:dist": "npm run desktop:prepare && electron-builder --win --publish never && node scripts/pruefe-paket.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "6.19.3",
@@ -28,11 +30,12 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "electron": "^44.8.0",
-    "electron-builder": "^26.15.3",
+    "electron-builder": "26.16.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "png-to-ico": "^3.0.2",
@@ -49,31 +52,62 @@
     "better-sqlite3@13.0.3": false,
     "electron@44.8.0": true
   },
-  "main": "electron/main.cjs",
-  "description": "Urlaubs- und Ferienplaner für Familien und kleine Teams",
-  "author": "lx-labs.dev",
   "build": {
     "appId": "dev.lx-labs.urlaubsplanung",
     "productName": "lx-urlaubsplanung",
-    "directories": { "output": "dist" },
-    "files": ["electron/main.cjs", "electron/icon.png", "package.json", "!node_modules{,/**/*}"],
+    "directories": {
+      "app": "electron",
+      "output": "dist"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "updater.cjs",
+      "updateKonfig.cjs",
+      "updateFehlerKern.cjs",
+      "releaseNotesKern.cjs",
+      "icon.png",
+      "package.json"
+    ],
     "extraResources": [
-      { "from": "build/standalone", "to": "standalone", "filter": ["**/*"] },
-      { "from": "build/migrations", "to": "migrations" }
+      {
+        "from": "build/standalone",
+        "to": "standalone",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "build/migrations",
+        "to": "migrations"
+      }
     ],
     "npmRebuild": false,
     "afterPack": "scripts/after-pack.cjs",
+    "electronFuses": {
+      "runAsNode": false,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true,
+      "grantFileProtocolExtraPrivileges": false
+    },
     "win": {
       "icon": "electron/icon.ico",
-      "target": ["nsis", "portable"]
+      "target": "nsis"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "artifactName": "${productName}-${version}-setup.${ext}",
-      "shortcutName": "lx-urlaubsplanung"
+      "shortcutName": "lx-urlaubsplanung",
+      "artifactName": "lx-urlaubsplanung-Setup-${version}.${ext}"
     },
-    "portable": { "artifactName": "${productName}-${version}-portable.exe" }
+    "publish": {
+      "provider": "github",
+      "owner": "diy3d-de",
+      "repo": "lx-labs-urlaubsplanung",
+      "releaseType": "draft"
+    }
   }
 }

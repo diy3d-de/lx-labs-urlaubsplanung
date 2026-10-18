@@ -1,6 +1,11 @@
-# Baut die Windows-Desktop-App (Installer + Portable-EXE).
-# - Tag v* (z. B. v0.2.0): Build und GitHub-Release mit beiden EXE-Dateien
-# - manuell (workflow_dispatch): nur Build, EXE-Dateien als Workflow-Artefakt
+# Baut die Windows-Desktop-App (NSIS-Installer mit automatischen Updates).
+# - Tag v* (git tag vX.Y.Z && git push origin main vX.Y.Z): Build, Tests, Paketprüfung und GENAU EIN
+#   Release-Entwurf mit Installer, .blockmap und latest.yml. Installierte Apps sehen das Update erst,
+#   wenn der Entwurf veröffentlicht ist (gh release edit vX.Y.Z --draft=false --latest --notes-file …).
+# - manuell (workflow_dispatch): Probe-Build ohne Veröffentlichung, Installer als Workflow-Artefakt.
+#
+# Härtung: Der Build läuft nur mit Leserechten und ohne gespeicherte Zugangsdaten; Schreibrechte bekommt
+# allein der kleine Release-Job, der keinen Projektcode ausführt.
 name: Desktop-Release
 
 on:
@@ -9,55 +14,93 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  windows:
-    runs-on: windows-latest
+  build:
+    # Nicht windows-latest: Runner mit neuerem Visual Studio erkennt node-gyp älterer electron-builder nicht.
+    runs-on: windows-2022
     env:
-      # Ohne Zertifikat keine Signatur versuchen (SignPath folgt als eigener Schritt)
+      # Ohne Zertifikat keine Signatur versuchen
       CSC_IDENTITY_AUTO_DISCOVERY: "false"
     steps:
-      - uses: actions/checkout@v7
+      # Actions per Commit-SHA gepinnt: ein verschobener Tag kann keinen fremden Code einschleusen.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-          cache: npm
+          # Release-Builds ohne Cache (kein Risiko durch einen manipulierten Cache)
+          cache: ${{ github.event_name == 'push' && '' || 'npm' }}
+          cache-dependency-path: |
+            package-lock.json
+            electron/package-lock.json
 
-      - name: Tag passt zur Version in package.json
-        if: startsWith(github.ref, 'refs/tags/v')
-        shell: pwsh
+      - name: Tag muss zur Version in package.json passen
+        if: github.event_name == 'push'
+        shell: bash
         run: |
-          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
-          if ("v$version" -ne "${{ github.ref_name }}") {
-            Write-Error "Tag ${{ github.ref_name }} passt nicht zu package.json-Version $version"
+          VERSION="v$(node -p "require('./package.json').version")"
+          if [ "$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME passt nicht zu package.json ($VERSION)"
             exit 1
-          }
+          fi
 
+      # Ohne Lifecycle-Skripte der Abhängigkeiten; better-sqlite3 bringt Node-API-Prebuilds mit.
       - name: Abhängigkeiten installieren
-        run: npm ci
+        run: |
+          npm ci --ignore-scripts
+          npm run desktop:deps
+          npx prisma generate
 
-      - name: Prisma-Client erzeugen
-        run: npx prisma generate
+      - name: Typprüfung, Lint und Tests
+        run: |
+          npx tsc --noEmit
+          npm run lint
+          npm test
 
       - name: Desktop-App bauen
-        run: npm run desktop:prepare && npx electron-builder --win --publish never
+        run: |
+          npm run desktop:prepare
+          npx electron-builder --win --publish never
 
-      - name: EXE-Dateien als Artefakt hochladen
-        uses: actions/upload-artifact@v7
+      # Jede Abhängigkeit muss im Paket so auflösbar sein wie später zur Laufzeit.
+      - name: Paket prüfen
+        run: node scripts/pruefe-paket.cjs
+
+      - name: Installer als Artefakt hochladen
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: lx-urlaubsplanung-windows
-          path: dist/*.exe
+          path: |
+            dist/lx-urlaubsplanung-Setup-*.exe
+            dist/lx-urlaubsplanung-Setup-*.exe.blockmap
+            dist/latest.yml
           if-no-files-found: error
 
-      - name: GitHub-Release anlegen
-        if: startsWith(github.ref, 'refs/tags/v')
-        shell: pwsh
+  release:
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: lx-urlaubsplanung-windows
+          path: dist
+
+      # Nicht den eingebauten Publisher von electron-builder 26 nutzen: Er legte zwei Releases an,
+      # eines davon ohne Installer, und installierte Apps fanden keine latest.yml.
+      - name: Release-Entwurf anlegen
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
         run: |
-          $files = Get-ChildItem dist -Filter *.exe | ForEach-Object { $_.FullName }
-          gh release create "${{ github.ref_name }}" @files `
-            --title "lx-urlaubsplanung ${{ github.ref_name }}" `
-            --notes "Windows-Installer (*-setup.exe) und Portable-Version (*-portable.exe). Daten unter %APPDATA%\lx-urlaubsplanung."
+          VERSION="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" --repo "$REPO" --draft --title "lx-urlaubsplanung $VERSION" --notes "" \
+            "dist/lx-urlaubsplanung-Setup-$VERSION.exe" \
+            "dist/lx-urlaubsplanung-Setup-$VERSION.exe.blockmap" \
+            "dist/latest.yml"

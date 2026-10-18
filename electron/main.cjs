@@ -1,8 +1,9 @@
 // Electron-Hauptprozess: startet den Next.js-Standalone-Server lokal und zeigt ihn in einem Fenster.
-const { app, BrowserWindow, dialog, shell } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, session, shell } = require("electron");
 const fs = require("node:fs");
 const net = require("node:net");
 const path = require("node:path");
+const { getUpdateStatus, initUpdater, installiereUpdate, suchenNachUpdates } = require("./updater.cjs");
 
 const ICON = path.join(__dirname, "icon.png");
 
@@ -72,6 +73,30 @@ async function startServer() {
   throw new Error("Der lokale Server ist nicht gestartet.");
 }
 
+let mainWindow = null;
+let appOrigin = null;
+
+function sameOrigin(target) {
+  try {
+    return new URL(target).origin === appOrigin;
+  } catch {
+    return false;
+  }
+}
+
+/** Update-Kanäle nur für das eigene Hauptfenster mit der eigenen Seite. */
+function vomHauptfenster(event) {
+  return mainWindow !== null && event.sender === mainWindow.webContents && sameOrigin(event.senderFrame?.url ?? "");
+}
+
+function registriereUpdateKanaele() {
+  ipcMain.handle("update:get-status", (event) => (vomHauptfenster(event) ? getUpdateStatus() : null));
+  ipcMain.handle("update:check", (event) => (vomHauptfenster(event) ? suchenNachUpdates() : undefined));
+  ipcMain.handle("update:install", (event) =>
+    vomHauptfenster(event) ? installiereUpdate() : { ok: false, grund: "Nicht erlaubt" },
+  );
+}
+
 async function createWindow() {
   const win = new BrowserWindow({
     width: 1400,
@@ -83,39 +108,71 @@ async function createWindow() {
     title: "lx-urlaubsplanung",
     backgroundColor: "#0b1220",
     autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.cjs"),
+      contextIsolation: true,
+      sandbox: true,
+      nodeIntegration: false,
+    },
+  });
+  mainWindow = win;
+  win.on("closed", () => {
+    mainWindow = null;
   });
   win.once("ready-to-show", () => win.show());
 
   const url = await startServer();
+  appOrigin = new URL(url).origin;
   // Externe Links im Standardbrowser öffnen, nie im App-Fenster.
   win.webContents.setWindowOpenHandler(({ url: target }) => {
     if (/^https?:/i.test(target)) shell.openExternal(target);
     return { action: "deny" };
   });
-  win.webContents.on("will-navigate", (e, target) => {
-    if (!target.startsWith(url)) {
+  const nurEigeneSeite = (e, target) => {
+    if (!sameOrigin(target)) {
       e.preventDefault();
       if (/^https?:/i.test(target)) shell.openExternal(target);
     }
+  };
+  win.webContents.on("will-navigate", nurEigeneSeite);
+  win.webContents.on("will-redirect", nurEigeneSeite);
+  win.webContents.on("will-frame-navigate", (e) => {
+    if (!sameOrigin(e.url)) e.preventDefault();
   });
   await win.loadURL(url);
 }
 
+// Ein zweiter Start (z. B. durch den Neustart-Wächter nach einem Update) beendet sich sofort
+// und holt das vorhandene Fenster nach vorn.
 if (!app.requestSingleInstanceLock()) {
-  app.quit();
+  app.exit(0);
 } else {
   app.on("second-instance", () => {
-    const [win] = BrowserWindow.getAllWindows();
-    if (win) {
-      if (win.isMinimized()) win.restore();
-      win.focus();
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
     }
   });
-  app.whenReady().then(() =>
-    createWindow().catch((err) => {
+  app.whenReady().then(async () => {
+    // Die App braucht keine Browser-Berechtigungen (Kamera, Mikrofon, Standort, Benachrichtigungen …)
+    session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
+    session.defaultSession.setPermissionCheckHandler(() => false);
+    registriereUpdateKanaele();
+    try {
+      await createWindow();
+    } catch (err) {
       dialog.showErrorBox("lx-urlaubsplanung konnte nicht starten", String(err?.stack ?? err));
       app.quit();
-    }),
-  );
+      return;
+    }
+    initUpdater({
+      onStatus: (status) => mainWindow?.webContents.send("update:status", status),
+      log: (zeile) => console.log(zeile),
+      // Kein Vorgang im Hauptprozess, den ein Beenden beschädigen würde: Schreibzugriffe sind kurze
+      // SQLite-Transaktionen. Offene Dialoge und laufende Importe sperrt die Oberfläche (sperrGrund).
+      installationGesperrt: () => null,
+      vorInstallation: async () => {},
+    });
+  });
   app.on("window-all-closed", () => app.quit());
 }

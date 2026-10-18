@@ -63,18 +63,66 @@ Die App lässt sich als eigenständige Windows-Anwendung mit Electron bauen. Sie
 `127.0.0.1` mit einem zufälligen freien Port und ist damit von außen nicht erreichbar.
 
 ```bash
+npm run desktop:deps   # einmalig: Abhängigkeiten des App-Verzeichnisses electron/ (electron-updater)
 npm run icons          # nur nach Änderungen an electron/icon.svg
-npm run desktop:dist   # Next-Build + Installer und Portable-EXE in dist/
+npm run desktop:dist   # Next-Build, Installer in dist/, danach Paketprüfung
+npm test               # Tests (Updater, Release-Notes, Neustart-Wächter)
 ```
 
-Ergebnis: `dist/lx-urlaubsplanung Setup <version>.exe` (Installer) und `dist/lx-urlaubsplanung-<version>-portable.exe`.
-Die Datenbank liegt unter `%APPDATA%\lx-urlaubsplanung\urlaubsplanung.db`. Zum Testen ohne Installer:
+Ergebnis: `dist/lx-urlaubsplanung-Setup-<version>.exe`. Die Datenbank liegt unter
+`%APPDATA%\lx-urlaubsplanung\urlaubsplanung.db`. Zum Testen ohne Installer:
 `npm run desktop:prepare && npm run desktop:start`.
 
-**Release über GitHub Actions:** Version in `package.json` erhöhen, committen und ein passendes Tag pushen
-(`git tag v0.2.0 && git push origin v0.2.0`). Der Workflow `Desktop-Release` baut beide EXE-Dateien unter Windows
-und hängt sie an ein neues GitHub-Release. Manuell gestartet (Actions → Desktop-Release → Run workflow) baut er nur
-und legt die EXE-Dateien als Artefakt ab.
+## Release & OTA-Updates
+
+Die installierte Desktop-App prüft 15 Sekunden nach dem Start und danach alle 6 Stunden, ob es auf GitHub eine neuere
+Version gibt (öffentliche Releases dieses Repos, kein Token nötig). Ein Update lädt sie im Hintergrund; installiert
+wird nur per Klick auf **„Update v… bereit“ → „Jetzt neu starten und installieren“**. Solange ein Dialog offen ist oder
+ein Import läuft, ist die Installation gesperrt. Protokoll: `%APPDATA%\lx-urlaubsplanung\update.log`.
+
+**Neue Version veröffentlichen:**
+
+1. Version in `package.json` erhöhen (`npm version 0.3.0 --no-git-tag-version` passt auch `package-lock.json` an),
+   committen.
+2. `git tag v0.3.0 && git push origin main v0.3.0`
+3. Der Workflow `Desktop-Release` baut, testet, prüft das Paket und legt **einen Release-Entwurf** mit Installer,
+   `.blockmap` und `latest.yml` an. Entwurf prüfen.
+4. Release-Notes im Format von [`docs/release-notes-vorlage.md`](docs/release-notes-vorlage.md) schreiben und
+   veröffentlichen: `gh release edit v0.3.0 --draft=false --latest --notes-file notes.md`. Erst jetzt sehen
+   installierte Apps das Update.
+
+Manuell gestartet (Actions → Desktop-Release → Run workflow) baut der Workflow nur und legt den Installer als
+Artefakt ab.
+
+**Stolpersteine:**
+
+- Updates funktionieren nur mit dem NSIS-Installer. Die erste update-fähige Version muss einmal von Hand installiert
+  werden.
+- Release-Notes erscheinen im Update-Fenster ab der jeweils nächsten Version; angezeigt wird immer nur Text.
+- „Update: Server prüfen“: GitHub fand kein veröffentlichtes Release (nur Entwürfe) oder das Abruflimit war erreicht.
+- Ohne Code-Signing warnt Windows SmartScreen beim ersten Setup. Die Integrität sichert die SHA512-Prüfsumme in
+  `latest.yml`; Schreibrechte auf dieses Repo daher eng halten.
+- `scripts/pruefe-paket.cjs` vor jeder Veröffentlichung laufen lassen und immer das gepackte `dist/win-unpacked`
+  testen, nie nur den Entwicklungsstart.
+
+**Datenschutz:** Für die Update-Prüfung ruft die Desktop-App Server von GitHub ab (IP-Adresse und Programmversion
+gehen dabei an GitHub). Abschalten mit der Umgebungsvariablen `LX_URLAUBSPLANUNG_KEINE_UPDATES=1`.
+
+## Abgleich mit Mobilgeräten
+
+`POST /api/sync` gleicht Personen, Urlaube und das Bundesland mit der Mobile-App ab (Protokoll in
+[`src/lib/sync.ts`](src/lib/sync.ts)). Der Server führt dafür einen Änderungszähler (SQLite-Trigger, Migration
+`sync`); gelöschte Einträge werden als Tombstones gemerkt, damit Geräte Löschungen übernehmen. Wurde ein Eintrag auf
+dem Server geändert, während ein Gerät offline eine eigene Änderung hatte, gewinnt der Server; Löschungen gewinnen
+immer.
+
+Wie die übrige App hat die Schnittstelle **keinen Login** – nur im eigenen Netz betreiben. Zwischen Handy und Server
+gehen Namen und Abwesenheiten unverschlüsselt über das WLAN; wer das vermeiden will, stellt einen Reverse-Proxy mit
+TLS (z. B. Caddy) davor.
+
+**Erlaubte Hostnamen:** Gegen DNS-Rebinding beantwortet die API nur Anfragen an IP-Adressen, `localhost`, Namen ohne
+Punkt (z. B. `nas`) und lokale Zonen (`.local`, `.lan`, `.home.arpa`, `.fritz.box` …). Läuft die App unter einem
+eigenen Domainnamen, diesen in `ALLOWED_HOSTS` eintragen (kommagetrennt, ohne Port).
 
 ## Konfiguration
 
@@ -83,6 +131,7 @@ und legt die EXE-Dateien als Artefakt ab.
 | `DATABASE_URL` | Datenbank für die Prisma-CLI (Migrationen) | `file:./dev.db` (= `prisma/dev.db`) |
 | `SQLITE_PATH` | Datenbankdatei der laufenden App | `prisma/dev.db` |
 | `PORT` | HTTP-Port | `3000` |
+| `ALLOWED_HOSTS` | Zusätzlich erlaubte Hostnamen der API (kommagetrennt), z. B. `urlaub.example.de` | – |
 
 ## Datensicherung
 

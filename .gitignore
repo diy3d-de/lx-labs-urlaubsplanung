@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/electron/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -43,8 +44,11 @@ yarn-error.log*
 next-env.d.ts
 
 # database
-prisma/dev.db
-prisma/dev.db-journal
+prisma/*.db
+prisma/*.db-journal
+
+# lokale Claude-Code-Einstellungen und Übergabenotizen
+.claude/
 
 # logs
 dev.log
