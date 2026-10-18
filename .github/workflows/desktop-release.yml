@@ -57,7 +57,7 @@ jobs:
 
       - name: Typprüfung, Lint und Tests
         run: |
-          npx tsc --noEmit
+          npm run typecheck
           npm run lint
           npm test
 
