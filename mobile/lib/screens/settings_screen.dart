@@ -92,6 +92,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 14),
+            child: Row(children: [
+              const LxWordmark(size: 18),
+              const SizedBox(width: 10),
+              Text('Urlaubsplanung${u.appVersion == null ? '' : ' · v${u.appVersion}'}',
+                  style: const TextStyle(color: kTextMuted, fontFamily: kFontMono, fontSize: 12)),
+            ]),
+          ),
           _Abschnitt(
             titel: 'Feiertage und Schulferien',
             children: [

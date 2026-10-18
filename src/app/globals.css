@@ -1,20 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0b0e14;
-  --bg-elevated: #0f131b;
-  --surface: #141922;
-  --surface-2: #1b212c;
-  --surface-hover: #212836;
-  --border: #262d3a;
-  --border-soft: #1d232e;
-  --text: #e8ebf1;
-  --text-muted: #929cae;
-  --text-faint: #5c6577;
-  --accent: #38bdf8;
-  --accent-soft: rgba(56, 189, 248, 0.14);
-  --accent-strong: #0ea5e9;
-  --danger: #fb7185;
+  /* Farben und Schriften wie lx-labs.dev (canvas, card, line, cyber, neural, fg, muted) */
+  --bg: #090a0f;
+  --bg-elevated: #0e1017;
+  --surface: #13161f;
+  --surface-2: #1a1e29;
+  --surface-hover: #212634;
+  --border: #242936;
+  --border-soft: #1b1f2b;
+  --text: #e6e8ee;
+  --text-muted: #8b93a7;
+  --text-faint: #5d6578;
+  --accent: #00f0ff;
+  --accent-soft: rgba(0, 240, 255, 0.12);
+  --accent-strong: #5cf6ff;
+  --neural: #7c3aed;
+  --danger: #ff5f57;
   --weekend-bg: rgba(100, 130, 170, 0.16);
   --weekend-text: #93a5c4;
   --holiday-bg: rgba(244, 63, 94, 0.24);
@@ -22,19 +24,19 @@
   --ferien-bg: rgba(217, 155, 15, 0.28);
   --ferien-text: #fcd34d;
   --ferien-weekend-bg: rgba(191, 140, 20, 0.48);
-  --today-ring: #38bdf8;
+  --today-ring: #00f0ff;
 
   --color-background: var(--bg);
   --color-foreground: var(--text);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--text);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 * {
@@ -46,7 +48,12 @@ html {
 }
 
 body {
-  background: var(--bg);
+  /* violett-cyaner Schimmer oben wie auf lx-labs.dev */
+  background:
+    radial-gradient(ellipse 60% 380px at 30% 0, rgba(124, 58, 237, 0.22), transparent 70%),
+    radial-gradient(ellipse 45% 300px at 70% 0, rgba(0, 240, 255, 0.07), transparent 70%),
+    var(--bg);
+  background-repeat: no-repeat;
   color: var(--text);
   font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -74,7 +81,7 @@ body {
 }
 
 .font-plex {
-  font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
 .person-colors {

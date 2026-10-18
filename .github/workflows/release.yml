@@ -128,7 +128,9 @@ jobs:
             echo "Android-Signatur-Secrets fehlen (ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD)"
             exit 1
           fi
-          echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload.jks
+          # Whitespace/Zeilenenden entfernen (je nach Hochladeweg hängt am Secret ein CR/LF), sonst bricht base64 -d ab
+          printf '%s' "$KEYSTORE_BASE64" | tr -d '[:space:]' | base64 -d > android/app/upload.jks
+          test -s android/app/upload.jks
           {
             echo "storeFile=upload.jks"
             echo "storePassword=$KEYSTORE_PASSWORD"

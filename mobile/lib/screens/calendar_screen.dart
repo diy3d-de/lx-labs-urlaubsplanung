@@ -226,7 +226,7 @@ class _DayCell extends StatelessWidget {
                     contentPadding: EdgeInsets.zero,
                     leading: CircleAvatar(
                       backgroundColor: personColor(p?.color ?? ''),
-                      child: Text(personInitials(p?.name ?? '?'), style: const TextStyle(fontSize: 12, color: Color(0xFF04121B))),
+                      child: Text(personInitials(p?.name ?? '?'), style: const TextStyle(fontSize: 12, color: kOnAccent)),
                     ),
                     title: Text(p?.name ?? 'Unbekannt'),
                     subtitle: Text([

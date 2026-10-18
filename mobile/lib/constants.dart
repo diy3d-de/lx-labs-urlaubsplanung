@@ -50,16 +50,23 @@ String personInitials(String name) {
   return (parts.first.characters.first + parts.last.characters.first).toUpperCase();
 }
 
-// Farben der Web-App (dunkles Design)
-const kBg = Color(0xFF0B0E14);
-const kSurface = Color(0xFF141922);
-const kSurface2 = Color(0xFF1B212C);
-const kBorder = Color(0xFF262D3A);
-const kText = Color(0xFFE8EBF1);
-const kTextMuted = Color(0xFF929CAE);
-const kTextFaint = Color(0xFF5C6577);
-const kAccent = Color(0xFF38BDF8);
-const kDanger = Color(0xFFFB7185);
+// Farben und Schriften von lx-labs.dev (canvas, card, line, cyber, neural, terminal, fg, muted)
+const kBg = Color(0xFF090A0F);
+const kSurface = Color(0xFF13161F);
+const kSurface2 = Color(0xFF1A1E29);
+const kBorder = Color(0xFF242936);
+const kText = Color(0xFFE6E8EE);
+const kTextMuted = Color(0xFF8B93A7);
+const kTextFaint = Color(0xFF5D6578);
+const kAccent = Color(0xFF00F0FF); // cyber
+const kNeural = Color(0xFF7C3AED);
+const kTerminal = Color(0xFF10B981);
+const kDanger = Color(0xFFFF5F57);
+const kOnAccent = Color(0xFF04121B);
+
+const kFontSans = 'Inter';
+const kFontMono = 'JetBrainsMono';
+
 const kWeekendBg = Color(0x296482AA);
 const kHolidayBg = Color(0x3DF43F5E);
 const kHolidayText = Color(0xFFFDA4AF);
@@ -69,3 +76,51 @@ const kFerienText = Color(0xFFFCD34D);
 /// Release-Repo der App-Updates (wie electron/updateKonfig.cjs)
 const kReleaseOwner = 'diy3d-de';
 const kReleaseRepo = 'lx-labs-urlaubsplanung';
+
+/// Seitenhintergrund mit violett-cyanem Schimmer oben, wie auf lx-labs.dev.
+class LxBackground extends StatelessWidget {
+  final Widget child;
+  const LxBackground({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+        decoration: const BoxDecoration(color: kBg),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: const Alignment(-0.4, -1.15),
+              radius: 1.1,
+              colors: [kNeural.withValues(alpha: 0.30), kNeural.withValues(alpha: 0.0)],
+            ),
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: const Alignment(0.8, -1.1),
+                radius: 0.8,
+                colors: [kAccent.withValues(alpha: 0.09), kAccent.withValues(alpha: 0.0)],
+              ),
+            ),
+            child: child,
+          ),
+        ),
+      );
+}
+
+/// Wortmarke wie in der Kopfzeile von lx-labs.dev: „lx“ cyan, „-labs“ weiß, „.dev“ in Monospace gedämpft.
+class LxWordmark extends StatelessWidget {
+  final double size;
+  const LxWordmark({super.key, this.size = 18});
+
+  @override
+  Widget build(BuildContext context) => Text.rich(
+        TextSpan(children: [
+          const TextSpan(text: 'lx', style: TextStyle(color: kAccent)),
+          const TextSpan(text: '-labs', style: TextStyle(color: Colors.white)),
+          TextSpan(
+              text: '.dev',
+              style: TextStyle(color: kTextMuted, fontFamily: kFontMono, fontWeight: FontWeight.w500, letterSpacing: 0, fontSize: size * 0.9)),
+        ]),
+        style: TextStyle(fontWeight: FontWeight.w800, fontSize: size, letterSpacing: -0.4),
+      );
+}

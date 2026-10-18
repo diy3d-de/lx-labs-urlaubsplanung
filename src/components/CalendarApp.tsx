@@ -223,14 +223,18 @@ export default function CalendarApp() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <CalendarDays className="text-[var(--accent)]" size={22} />
-            <div className="flex items-baseline gap-2 font-plex">
+            <div className="flex items-baseline gap-3">
+              {/* Wortmarke wie in der Kopfzeile von lx-labs.dev */}
               <a
                 href="https://lx-labs.dev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded border border-[var(--accent)]/40 bg-[var(--accent-soft)] px-1.5 py-0.5 text-[11px] font-semibold leading-none tracking-tight text-[var(--accent)] transition-colors hover:border-[var(--accent)]"
+                aria-label="lx-labs.dev"
+                className="text-base font-extrabold leading-none tracking-tight transition-opacity hover:opacity-80"
               >
-                lx-labs.dev
+                <span className="text-[var(--accent)]">lx</span>
+                <span className="text-white">-labs</span>
+                <span className="font-plex font-medium tracking-normal text-[var(--text-muted)]">.dev</span>
               </a>
               <h1 className="text-lg font-semibold tracking-tight">Urlaubsplanung</h1>
             </div>

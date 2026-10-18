@@ -22,7 +22,8 @@ class SyncIndicator extends StatelessWidget {
       tooltip: fehler ? 'Abgleich fehlgeschlagen: ${state.syncMeldung}' : 'Jetzt abgleichen',
       icon: Icon(
         fehler ? Icons.cloud_off : (state.offeneAenderungen > 0 ? Icons.cloud_upload_outlined : Icons.cloud_done_outlined),
-        color: fehler ? kDanger : kTextMuted,
+        // wie der „online“-Punkt auf lx-labs.dev: Terminal-Grün, wenn alles abgeglichen ist
+        color: fehler ? kDanger : (state.offeneAenderungen > 0 ? kTextMuted : kTerminal),
       ),
       onPressed: () async {
         final messenger = ScaffoldMessenger.of(context);

@@ -32,7 +32,7 @@ class PersonsScreen extends StatelessWidget {
                   child: ListTile(
                     leading: CircleAvatar(
                       backgroundColor: personColor(p.color),
-                      child: Text(personInitials(p.name), style: const TextStyle(fontSize: 13, color: Color(0xFF04121B))),
+                      child: Text(personInitials(p.name), style: const TextStyle(fontSize: 13, color: kOnAccent)),
                     ),
                     title: Text(p.name),
                     subtitle: Text(p.isStudent ? 'Schüler' : 'Anspruch ${formatDays(p.vacationDays)} Tage'),
@@ -153,7 +153,7 @@ class _PersonEditorState extends State<_PersonEditor> {
                       radius: 16,
                       backgroundColor: personPalette[i],
                       child: personColor(aktuelleFarbe) == personPalette[i]
-                          ? const Icon(Icons.check, size: 18, color: Color(0xFF04121B))
+                          ? const Icon(Icons.check, size: 18, color: kOnAccent)
                           : null,
                     ),
                   ),

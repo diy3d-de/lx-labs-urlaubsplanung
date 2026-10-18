@@ -30,10 +30,18 @@ class UrlaubsplanungApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = ColorScheme.fromSeed(seedColor: kAccent, brightness: Brightness.dark).copyWith(
       primary: kAccent,
+      onPrimary: kOnAccent,
+      secondary: kNeural,
       surface: kSurface,
       onSurface: kText,
+      onSurfaceVariant: kTextMuted,
+      outline: kBorder,
+      outlineVariant: kBorder,
       error: kDanger,
     );
+    const radius = BorderRadius.all(Radius.circular(12));
+    final base = ThemeData(brightness: Brightness.dark, useMaterial3: true);
+    final textTheme = base.textTheme.apply(fontFamily: kFontSans, bodyColor: kText, displayColor: kText);
     return AppScope(
       state: state,
       child: MaterialApp(
@@ -48,11 +56,80 @@ class UrlaubsplanungApp extends StatelessWidget {
         ],
         theme: ThemeData(
           colorScheme: scheme,
-          scaffoldBackgroundColor: kBg,
           useMaterial3: true,
-          appBarTheme: const AppBarTheme(backgroundColor: kBg, foregroundColor: kText, elevation: 0),
-          cardTheme: const CardThemeData(color: kSurface, margin: EdgeInsets.zero),
+          fontFamily: kFontSans,
+          textTheme: textTheme,
+          // transparent: den violett-cyanen Schimmer zeichnet HomeShell hinter alle Seiten
+          scaffoldBackgroundColor: Colors.transparent,
+          canvasColor: kBg,
+          appBarTheme: AppBarTheme(
+            backgroundColor: Colors.transparent,
+            foregroundColor: kText,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            titleTextStyle: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.4, color: Colors.white),
+          ),
+          cardTheme: const CardThemeData(
+            color: kSurface,
+            margin: EdgeInsets.zero,
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: radius, side: BorderSide(color: kBorder)),
+          ),
           dividerColor: kBorder,
+          navigationBarTheme: NavigationBarThemeData(
+            backgroundColor: kSurface,
+            indicatorColor: kAccent.withValues(alpha: 0.14),
+            iconTheme: WidgetStateProperty.resolveWith((s) => IconThemeData(color: s.contains(WidgetState.selected) ? kAccent : kTextMuted)),
+            labelTextStyle: WidgetStateProperty.resolveWith((s) => TextStyle(
+                  fontFamily: kFontMono,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: s.contains(WidgetState.selected) ? kAccent : kTextMuted,
+                )),
+          ),
+          filledButtonTheme: FilledButtonThemeData(
+            style: FilledButton.styleFrom(
+              backgroundColor: kAccent,
+              foregroundColor: kOnAccent,
+              textStyle: const TextStyle(fontWeight: FontWeight.w600),
+              shape: const RoundedRectangleBorder(borderRadius: radius),
+            ),
+          ),
+          outlinedButtonTheme: OutlinedButtonThemeData(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: kText,
+              side: const BorderSide(color: kBorder),
+              shape: const RoundedRectangleBorder(borderRadius: radius),
+            ),
+          ),
+          textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: kAccent)),
+          floatingActionButtonTheme: const FloatingActionButtonThemeData(
+            backgroundColor: kAccent,
+            foregroundColor: kOnAccent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+          ),
+          inputDecorationTheme: const InputDecorationTheme(
+            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: kBorder)),
+            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: kAccent, width: 2)),
+            labelStyle: TextStyle(color: kTextMuted),
+          ),
+          switchTheme: SwitchThemeData(
+            thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? kOnAccent : kTextMuted),
+            trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? kAccent : kSurface2),
+            trackOutlineColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? kAccent : kBorder),
+          ),
+          bottomSheetTheme: const BottomSheetThemeData(
+            backgroundColor: kSurface,
+            surfaceTintColor: Colors.transparent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+          ),
+          dialogTheme: const DialogThemeData(
+            backgroundColor: kSurface,
+            surfaceTintColor: Colors.transparent,
+            shape: RoundedRectangleBorder(borderRadius: radius, side: BorderSide(color: kBorder)),
+          ),
+          snackBarTheme: const SnackBarThemeData(backgroundColor: kSurface2, contentTextStyle: TextStyle(color: kText), behavior: SnackBarBehavior.floating),
+          progressIndicatorTheme: const ProgressIndicatorThemeData(color: kAccent),
         ),
         home: HomeShell(updates: updates),
       ),
@@ -117,10 +194,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       SettingsScreen(updates: widget.updates),
     ];
     return Scaffold(
-      body: SafeArea(child: IndexedStack(index: _tab, children: screens)),
+      backgroundColor: kBg,
+      body: LxBackground(child: SafeArea(child: IndexedStack(index: _tab, children: screens))),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
-        backgroundColor: kSurface,
         onDestinationSelected: (i) => setState(() => _tab = i),
         destinations: [
           const NavigationDestination(icon: Icon(Icons.calendar_month_outlined), selectedIcon: Icon(Icons.calendar_month), label: 'Kalender'),
